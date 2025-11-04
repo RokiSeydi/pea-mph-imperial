@@ -14,14 +14,12 @@ An intelligent mentorship platform that connects medical students with AI-powere
 
 ### AI Specialists
 
-6 specialized AI providers trained on real healthcare expertise:
+4 specialist mentors trained on real healthcare expertise:
 
-- **Dr. Lisa Ahmed** - Mental Health & Wellbeing (Anxiety, Depression, Stress)
-- **Dr. Sarah Chen** - Sexual & Reproductive Health
-- **Tom Richardson** - Physical Health & Pain Management (Osteopathy)
-- **Dr. Marcus Thompson** - ADHD & Executive Function Support
-- **Sophie Martinez** - Nutrition & Eating Disorders
-- **Dr. Sarah Bennett** - Disability Rights & Accommodations Navigator
+- **Dr. Sarah Mitchell** - Emergency Medicine (US/UK pathways, burnout management, international medical training)
+- **Dr. Li Chen (陈丽)** - Interventional Cardiology (bicultural medical experience, family expectations, China-UK healthcare systems)
+- **Dr. James Okonkwo** - Psychiatry & Global Mental Health (cultural psychiatry, refugee mental health, first-generation doctors)
+- **Dr. Priya Mehta** - Internal Medicine & Medical Education (imposter syndrome, generalist pathways, women in medicine)
 
 ### UI/UX
 
