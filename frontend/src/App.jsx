@@ -115,6 +115,9 @@ function App() {
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [isLoadingConversation, setIsLoadingConversation] = useState(true);
 
+  // Track which message indices should be visible (for staggered animation)
+  const [visibleMessageCount, setVisibleMessageCount] = useState(3); // Start with initial greetings
+
   const messagesEndRef = useRef(null);
   const chatContainerRef = useRef(null);
 
@@ -166,6 +169,8 @@ function App() {
             text: msg.content,
           }));
           setMessages(formattedMessages);
+          // Show all loaded messages immediately (no stagger on page load)
+          setVisibleMessageCount(formattedMessages.length);
         }
 
         // Restore recommended providers if they exist
@@ -210,6 +215,16 @@ function App() {
   useEffect(() => {
     scrollToBottom();
   }, [messages, providerConversations]);
+
+  // Stagger reveal of Pea's messages - reveal one at a time
+  useEffect(() => {
+    if (visibleMessageCount < messages.length) {
+      const timer = setTimeout(() => {
+        setVisibleMessageCount((prev) => prev + 1);
+      }, 400); // 400ms delay between each message reveal
+      return () => clearTimeout(timer);
+    }
+  }, [visibleMessageCount, messages.length]);
 
   // Add randomized delay before showing typing indicator (1-2 seconds)
   useEffect(() => {
@@ -584,7 +599,7 @@ function App() {
                 key={idx}
                 className={`mb-4 ${
                   msg.sender === "user" ? "flex justify-end" : ""
-                }`}
+                } ${idx < visibleMessageCount ? "opacity-100" : "opacity-0"} transition-opacity duration-300`}
               >
                 {msg.sender === "pea" && (
                   <div className="flex flex-col gap-2 items-start max-w-[85%]">

@@ -25,14 +25,19 @@ async function initRedis() {
 
   redisInitializing = true;
   try {
-    if (!process.env.REDIS_URL) {
-      console.log("⚠️  No REDIS_URL found - conversations will not persist");
+    // Use UPSTASH_REDIS_URL if available, fall back to REDIS_URL
+    const redisUrl = process.env.UPSTASH_REDIS_URL || process.env.REDIS_URL;
+
+    if (!redisUrl) {
+      console.log(
+        "⚠️  No UPSTASH_REDIS_URL or REDIS_URL found - conversations will not persist"
+      );
       redisInitializing = false;
       return null;
     }
 
     redis = createClient({
-      url: process.env.REDIS_URL,
+      url: redisUrl,
     });
 
     redis.on("error", (err) => console.error("Redis Client Error", err));
@@ -858,13 +863,15 @@ Provider IDs only, comma-separated:`,
 
     // Trigger recommendations ONLY if:
     // 1. User expressed interest AND Pea already mentioned care team
-    // 2. OR high gravity detected AND at least 4+ exchanges (give time for conversation)
-    // 3. OR after 8+ messages as final fallback
+    // 2. OR high gravity detected AND at least 3+ exchanges (give some time but not too much)
+    // 3. OR after 5+ messages as final fallback (earlier than before)
+    // 4. OR if Pea mentioned team even without explicit user agreement
     const shouldTrigger =
       !profile.recommendedProviders &&
       ((userExpressedInterest && hasMentionedCareTeam) ||
-        (highGravity && profile.exchangeCount >= 4) ||
-        profile.exchangeCount >= 8);
+        (hasMentionedCareTeam && profile.exchangeCount >= 2) ||
+        (highGravity && profile.exchangeCount >= 3) ||
+        profile.exchangeCount >= 5);
 
     // If providers already exist, always show them (stay persistent)
     if (profile.recommendedProviders) {
@@ -885,26 +892,31 @@ Provider IDs only, comma-separated:`,
         // Ask Claude to recommend providers
         const recommendationResponse = await anthropic.messages.create({
           model: "claude-sonnet-4-20250514",
-          max_tokens: 200,
-          system: `You are an expert at matching students with healthcare providers. 
-Analyze conversations and recommend 2-3 providers who would be most helpful.
-Respond ONLY with provider IDs, comma-separated.`,
+          max_tokens: 100,
+          system: `You are an expert at matching medical students with healthcare specialists. 
+STRICT RULE: Only recommend specialists if there is a GOOD specialty match.
+If specialty is NOT well matched, respond with: none
+
+Available specialists (strict matching):
+- dr-sarah-mitchell: ONLY if interested in Emergency Medicine or high-stress medical work
+- dr-li-chen: ONLY if interested in Cardiology or international/bicultural medical training
+- dr-james-okonkwo: ONLY if interested in Psychiatry or mental health
+- dr-priya-mehta: ONLY if unsure/exploring specialties OR interested in general medicine
+
+Respond with provider ID(s) or "none" if no good match. NO OTHER TEXT.`,
           messages: [
             {
               role: "user",
-              content: `Based on this conversation, recommend 2-3 providers:
-
+              content: `Conversation:
 ${conversationSummary}
 
-Available providers:
-- dr-emma-therapist: Anxiety, exam stress, imposter syndrome, academic pressure
-- tom-osteopath: Back pain, posture, desk work injuries, joint problems
-- maya-yoga: Gentle movement, chronic fatigue, autoimmune conditions, mobility
-- lisa-nutritionist: Budget-friendly eating, meal planning, energy management
-- sarah-acupuncture: Chronic pain, migraines, stress relief, sleep issues
-- sarah-disability-navigator: Disability rights, university accommodations, DSA applications
+Is there a good specialist match? If yes, which one(s)? If no good match, say: none
+- dr-sarah-mitchell: Emergency Medicine, visa/burnout, high-stress specialties
+- dr-li-chen: Cardiology, international/IMG paths, bicultural navigation
+- dr-james-okonkwo: Psychiatry, mental health, cultural aspects of medicine
+- dr-priya-mehta: General/internal medicine, career exploration, "I'm unsure"
 
-Provider IDs only, comma-separated:`,
+RESPOND WITH ONLY: specialist ID(s) or "none"`,
             },
           ],
         });
@@ -913,14 +925,24 @@ Provider IDs only, comma-separated:`,
           .trim()
           .toLowerCase()
           .split(",")
-          .map((id) => id.trim());
+          .map((id) => id.trim())
+          .filter((id) => id.length > 0); // Remove empty strings
 
         console.log("💡 Recommended provider IDs:", recommendedIds);
 
+        // Validate IDs are in registry
+        const validIds = recommendedIds.filter((id) => {
+          const exists = !!SPECIALIST_REGISTRY[id];
+          if (!exists) {
+            console.warn(`⚠️  Provider ID not found in registry: ${id}`);
+          }
+          return exists;
+        });
+
+        console.log("✅ Valid provider IDs after validation:", validIds);
+
         // Get full provider objects
-        recommendedProviders = recommendedIds
-          .map((id) => SPECIALIST_REGISTRY[id])
-          .filter((p) => p); // Remove any invalid IDs
+        recommendedProviders = validIds.map((id) => SPECIALIST_REGISTRY[id]);
 
         // Store recommendations
         if (recommendedProviders.length > 0) {
@@ -931,6 +953,12 @@ Provider IDs only, comma-separated:`,
             "✅ Providers recommended:",
             recommendedProviders.map((p) => p.name)
           );
+        } else {
+          // Clear previous recommendations if no good match found
+          profile.recommendedProviders = null;
+          shouldShowProviders = false;
+          await saveUserProfile(conversationId, profile);
+          console.log("✅ No good specialist match - providers cleared");
         }
       } catch (error) {
         console.error("❌ Error getting recommendations:", error);

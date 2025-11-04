@@ -68,7 +68,7 @@ app.post("/api/provider-chat", async (req, res) => {
   providerConversation.push({ role: "user", content: message });
 
   try {
-      // Use specialist-specific system prompt
+    // Use specialist-specific system prompt
     const response = await gemini.messages.create({
       model: "gemini-2.5-flash",
       system: provider.prompt, // Each specialist has their own personality/expertise prompt

@@ -16,12 +16,12 @@ async function clearCache() {
     const conversationId = process.argv[2];
 
     if (!conversationId) {
-      console.log(
-        "Usage: node clear-cache.js <conversationId> [--all]\n"
-      );
+      console.log("Usage: node clear-cache.js <conversationId> [--all]\n");
       console.log("Examples:");
       console.log("  node clear-cache.js conv-1762274552034");
-      console.log("  node clear-cache.js conv-1762274552034 --all  (clears all related keys)");
+      console.log(
+        "  node clear-cache.js conv-1762274552034 --all  (clears all related keys)"
+      );
       console.log("\nOr use --all-conversations to clear everything:");
       console.log("  node clear-cache.js --all-conversations");
       await redisClient.quit();
@@ -46,9 +46,7 @@ async function clearCache() {
           console.log(`✅ No cache found for ${conversationId}`);
         } else {
           await redisClient.del(keys);
-          console.log(
-            `✅ Cleared ${keys.length} keys for ${conversationId}:`
-          );
+          console.log(`✅ Cleared ${keys.length} keys for ${conversationId}:`);
           keys.forEach((key) => console.log(`   - ${key}`));
         }
       } else {
