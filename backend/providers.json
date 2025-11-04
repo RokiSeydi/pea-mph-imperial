@@ -1,62 +1,42 @@
 [
   {
-    "id": "dr-emma-therapist",
-    "name": "Dr. Emma Chen",
-    "specialty": "Anxiety & Academic Stress",
-    "category": "Mental Health",
-    "bio": "CBT therapist specializing in student mental health. I help with exam anxiety, imposter syndrome, and building resilience through evidence-based approaches that actually make sense for student life.",
-    "credentials": "CBT-certified | 8+ years with students",
-    "color": "bg-blue-100",
-    "accentColor": "bg-blue-600"
+    "id": "dr-sarah-mitchell",
+    "name": "Dr. Sarah Mitchell",
+    "specialty": "Emergency Medicine",
+    "category": "Medical Specialties",
+    "bio": "EM attending at Royal London Hospital who trained in both US and UK systems. I understand the visa stress, burnout challenges, and what it's like to navigate international medical training. Real talk about what EM actually looks like.",
+    "credentials": "Johns Hopkins MD | 8 years EM practice",
+    "color": "bg-red-100",
+    "accentColor": "bg-red-600"
   },
   {
-    "id": "tom-osteopath",
-    "name": "Tom Richardson",
-    "specialty": "Back Pain & Posture",
-    "category": "Musculoskeletal",
-    "bio": "Osteopath helping students with back pain, poor posture from desk work, and sports injuries. I give you practical exercises that actually work for student life - no gym membership required.",
-    "credentials": "10 years experience | GOsC registered",
-    "color": "bg-green-100",
-    "accentColor": "bg-green-600"
+    "id": "dr-li-chen",
+    "name": "Dr. Li Chen (陈丽)",
+    "specialty": "Interventional Cardiology",
+    "category": "Medical Specialties",
+    "bio": "Interventional Cardiologist at St Thomas' who moved from Shanghai to London. I get family pressure about specialty choice, navigating two healthcare systems, and what it's like proving yourself as an international medical graduate. Fluent in Mandarin and English.",
+    "credentials": "Fudan MD | 12 years practice | Bilingual",
+    "color": "bg-pink-100",
+    "accentColor": "bg-pink-600"
   },
   {
-    "id": "maya-yoga",
-    "name": "Maya Patel",
-    "specialty": "Gentle Movement & Chronic Conditions",
-    "category": "Movement & Wellness",
-    "bio": "Trauma-informed yoga instructor who works with people managing chronic conditions and fatigue. I'm not about pushing through pain - I help you move in ways that feel good and support your energy.",
-    "credentials": "200hr certified | Trauma-informed training",
-    "color": "bg-orange-100",
-    "accentColor": "bg-orange-600"
+    "id": "dr-james-okonkwo",
+    "name": "Dr. James Okonkwo",
+    "specialty": "Psychiatry & Global Mental Health",
+    "category": "Medical Specialties",
+    "bio": "Consultant Psychiatrist at South London and Maudsley. First-gen British-Nigerian doctor who chose the 'stigmatized specialty' to bridge cultural gaps in mental health care. I work with refugees and understand what it's like to straddle two worlds.",
+    "credentials": "Edinburgh MBChB | Cultural psychiatry focus",
+    "color": "bg-indigo-100",
+    "accentColor": "bg-indigo-600"
   },
   {
-    "id": "lisa-nutritionist",
-    "name": "Lisa Ahmed",
-    "specialty": "Student Nutrition & Budget-Friendly Eating",
-    "category": "Nutrition & Wellness",
-    "bio": "Registered nutritionist who gets that students are broke and busy. I help with practical, affordable eating that supports your health without the diet culture BS or complicated meal prep.",
-    "credentials": "RNutr registered | Anti-diet approach",
-    "color": "bg-yellow-100",
-    "accentColor": "bg-yellow-600"
-  },
-  {
-    "id": "sarah-acupuncture",
-    "name": "Sarah Liu",
-    "specialty": "Pain Management & Stress Relief",
-    "category": "Alternative Therapies",
-    "bio": "Licensed acupuncturist combining traditional Chinese medicine with modern understanding. I help with chronic pain, migraines, stress, and sleep issues without the mystical woo-woo language.",
-    "credentials": "BAcC registered | 12 years practice",
-    "color": "bg-teal-100",
-    "accentColor": "bg-teal-600"
-  },
-  {
-    "id": "sarah-disability-navigator",
-    "name": "Dr. Sarah Bennett",
-    "specialty": "Disability Rights & University Accommodations",
-    "category": "Disability Support",
-    "bio": "Disability rights advocate who helps students navigate university support systems, DSA applications, and reasonable adjustments.",
-    "credentials": "PhD in Disability Studies | 5 years experience",
-    "color": "bg-purple-100",
-    "accentColor": "bg-purple-600"
+    "id": "dr-priya-mehta",
+    "name": "Dr. Priya Mehta",
+    "specialty": "Internal Medicine & Medical Education",
+    "category": "Medical Specialties",
+    "bio": "Consultant Physician and Director of Medical Student Education at Guy's and St Thomas'. British-Indian doctor who nearly quit medicine twice due to imposter syndrome. Now I mentor students through exactly that - the safe person to ask 'dumb questions.'",
+    "credentials": "King's College London MBBS | Education director",
+    "color": "bg-emerald-100",
+    "accentColor": "bg-emerald-600"
   }
 ]

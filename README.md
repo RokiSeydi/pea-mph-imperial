@@ -1,13 +1,13 @@
-# Pea - AI Health Coordinator & Care Team Platform
+# Pea - AI Mentorship Coordinator & Specialist Team Platform
 
-An intelligent health support platform that connects students with AI-powered healthcare specialists. Pea acts as a triage coordinator, understanding your health concerns and assembling a personalized care team of AI specialists trained on real provider expertise.
+An intelligent mentorship platform that connects medical students with AI-powered healthcare specialists. Pea acts as a personal mentor coordinator, understanding your needs and assembling a personalized team of AI specialists trained on real provider expertise.
 
 ## 🌟 Features
 
 ### Core Functionality
 
-- **Intelligent Triage**: Pea analyzes conversations to understand health concerns and emotional state
-- **Dynamic Care Team Recommendations**: AI recommends 2-3 relevant specialists based on conversation context
+- **Intelligent Matching**: Pea analyzes conversations to understand your background, interests, and values
+- **Dynamic Specialist Recommendations**: AI recommends 2-3 relevant specialists based on conversation context
 - **Persistent Conversations**: All chats saved to Redis with 7-day retention
 - **Context Sharing**: Specialists receive conversation history from Pea (no need to repeat yourself)
 - **Multi-line Messages**: Shift+Enter for new lines, Enter to send
@@ -26,10 +26,10 @@ An intelligent health support platform that connects students with AI-powered he
 ### UI/UX
 
 - **iMessage-style Chat Interface**: Familiar, comfortable design
-- **Split-screen Provider View**: Chat with Pea while browsing recommended specialists
+- **Split-screen Specialist View**: Chat with Pea while browsing recommended specialists
 - **Mobile-optimized**: Scroll-to-bottom button, responsive design
-- **Provider Persistence**: "View Your Team" button always available once providers recommended
-- **Dismissible Recommendations**: Permanently remove providers if not needed
+- **Specialist Persistence**: "View Your Team" button always available once specialists recommended
+- **Dismissible Recommendations**: Permanently remove specialists if not needed
 
 ## 🏗️ Architecture
 
@@ -44,7 +44,7 @@ HH-AGENTIC/
 ├── backend/           # Express.js API server
 │   ├── index.js      # Main server with all endpoints
 │   ├── peaSystemPrompt.js  # Pea's personality & instructions
-│   ├── providers.json      # Provider registry
+│   	├── providers.json      # Specialist registry
 │   ├── api/
 │   │   └── index.js  # Vercel serverless handler
 │   └── package.json
@@ -116,15 +116,15 @@ Frontend runs on `http://localhost:5173`
 - `POST /api/stream-chat` - Stream chat responses from Pea
 - `POST /api/provider-chat` - Chat with specific AI specialist
 - `POST /api/load-conversation` - Load conversation history on page refresh
-- `POST /api/dismiss-providers` - Permanently dismiss provider recommendations
-- `GET /api/providers` - Get all available providers
+- `POST /api/dismiss-providers` - Permanently dismiss specialist recommendations
+- `GET /api/providers` - Get all available specialists
 
-### How Provider Recommendations Work
+### How Specialist Recommendations Work
 
-1. User chats with Pea about health concerns
+1. User chats with Pea about their interests and background
 2. Backend analyzes conversation for:
-   - User expressing interest in help/support
-   - High gravity situation (crisis keywords detected)
+   - User expressing interest in mentorship
+   - Pea mentioning the mentorship team
    - Exchange count (4+ messages with interest, or 8+ messages total)
 3. When triggered, Claude analyzes conversation and recommends 2-3 relevant specialists
 4. Recommendations saved to Redis and persist across sessions
@@ -137,7 +137,7 @@ Frontend runs on `http://localhost:5173`
 ```
 conversation:{conversationId}           # Main Pea conversation (7-day TTL)
 profile:{conversationId}                # User profile with recommendations (7-day TTL)
-conversation:{conversationId}-{providerId}  # Provider-specific chats (7-day TTL)
+conversation:{conversationId}-{specialistId}  # Specialist-specific chats (7-day TTL)
 ```
 
 ### Storage Functions

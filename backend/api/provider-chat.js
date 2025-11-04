@@ -1,6 +1,6 @@
 // ADD THIS TO YOUR BACKEND (server.js or index.js)
 // ADD THIS NEW ENDPOINT AFTER YOUR /api/stream-chat ENDPOINT:
-// Provider-specific chat endpoint
+// Specialist-specific chat endpoint
 
 import express from "express";
 import cors from "cors";
@@ -22,7 +22,7 @@ app.use(express.json());
 // ADD THIS TO YOUR BACKEND (server.js or index.js)
 // ADD THIS NEW ENDPOINT AFTER YOUR /api/stream-chat ENDPOINT:
 
-// Provider-specific chat endpoint
+// Specialist-specific chat endpoint
 app.post("/api/provider-chat", async (req, res) => {
   const { conversationId, providerId, message } = req.body;
 
@@ -30,17 +30,17 @@ app.post("/api/provider-chat", async (req, res) => {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
-  // Get provider from registry
+  // Get specialist from registry
   const provider = PROVIDER_REGISTRY[providerId];
   if (!provider) {
-    return res.status(404).json({ error: "Provider not found" });
+    return res.status(404).json({ error: "Specialist not found" });
   }
 
-  // Get or create conversation history for this provider
+  // Get or create conversation history for this specialist
   const providerConvKey = `${conversationId}-${providerId}`;
   let providerConversation = conversations.get(providerConvKey) || [];
 
-  // CRITICAL: If this is the first message to this provider, get context from main Pea conversation
+  // CRITICAL: If this is the first message to this specialist, get context from main Pea conversation
   if (providerConversation.length === 0) {
     const mainConversation = conversations.get(conversationId) || [];
 
@@ -57,7 +57,7 @@ app.post("/api/provider-chat", async (req, res) => {
         content: `[Context from Pea: The person you're talking to has shared the following with Pea:\n\n${contextSummary}\n\nNow they're reaching out to you specifically for help with ${provider.specialty.toLowerCase()}. Be warm and acknowledge what they've been dealing with.]`,
       });
 
-      // Add a system acknowledgment so the provider knows to reference it
+      // Add a system acknowledgment so the specialist knows to reference it
       providerConversation.push({
         role: "assistant",
         content: `Got it - I understand the context. I'll be warm and reference what they've shared.`,
@@ -68,10 +68,10 @@ app.post("/api/provider-chat", async (req, res) => {
   providerConversation.push({ role: "user", content: message });
 
   try {
-    // Use provider-specific system prompt
+      // Use specialist-specific system prompt
     const response = await gemini.messages.create({
       model: "gemini-2.5-flash",
-      system: provider.prompt, // Each provider has their own personality/expertise prompt
+      system: provider.prompt, // Each specialist has their own personality/expertise prompt
       messages: providerConversation.filter(
         (m) => m.content && m.content.trim()
       ),
