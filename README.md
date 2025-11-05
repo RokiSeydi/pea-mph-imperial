@@ -238,6 +238,31 @@ https://pea-amsa.vercel.app?utm_source=kcl&utm_campaign=amsa_partnership&utm_med
 https://pea-amsa.vercel.app?utm_source=amsa_chapter&utm_campaign=wellness_week&utm_medium=social
 ```
 
+**Edinburgh Medical School - Cohort 1:**
+```
+https://pea-amsa.vercel.app?utm_source=edinburgh_cohort_1&utm_campaign=edinburgh_pilot&utm_medium=email
+```
+
+**Edinburgh Medical School - Cohort 2:**
+```
+https://pea-amsa.vercel.app?utm_source=edinburgh_cohort_2&utm_campaign=edinburgh_pilot&utm_medium=email
+```
+
+**Edinburgh Medical School - Cohort 3:**
+```
+https://pea-amsa.vercel.app?utm_source=edinburgh_cohort_3&utm_campaign=edinburgh_pilot&utm_medium=email
+```
+
+**Edinburgh Medical School - Cohort 4:**
+```
+https://pea-amsa.vercel.app?utm_source=edinburgh_cohort_4&utm_campaign=edinburgh_pilot&utm_medium=email
+```
+
+**Edinburgh Medical School - Cohort 5:**
+```
+https://pea-amsa.vercel.app?utm_source=edinburgh_cohort_5&utm_campaign=edinburgh_pilot&utm_medium=email
+```
+
 ### Available Parameters
 
 - `utm_source`: Cohort identifier (e.g., `med_students_cohort_a`, `kcl`, `amsa_chapter`)
