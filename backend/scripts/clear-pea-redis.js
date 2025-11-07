@@ -5,6 +5,8 @@ import { createClient } from "redis";
 // Load .env from backend folder (the script should be run from repo root or backend/)
 dotenv.config();
 
+const PROJECT_ID = "pea-mph-imperial";
+
 async function main() {
   const redisUrl = process.env.UPSTASH_REDIS_URL || process.env.REDIS_URL;
   if (!redisUrl) {
@@ -19,9 +21,9 @@ async function main() {
 
   try {
     await client.connect();
-    console.log("Connected to Redis, scanning for app keys...");
+    console.log(`Connected to Redis, scanning for ${PROJECT_ID} app keys...`);
 
-    const patterns = ["conversation:*", "profile:*"];
+    const patterns = [`${PROJECT_ID}:conversation:*`, `${PROJECT_ID}:profile:*`];
     for (const pattern of patterns) {
       const keys = await client.keys(pattern);
       if (!keys || keys.length === 0) {
