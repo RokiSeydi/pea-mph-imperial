@@ -64,48 +64,48 @@ const API_URL = import.meta.env?.VITE_API_URL || ""; // set VITE_API_URL in Verc
 const MOCK_MODE = false; // Set to false when backend is running
 
 // Mock providers for testing
-const MOCK_PROVIDERS = [
-  {
-    id: "dr-sarah-mitchell",
-    name: "Dr. Sarah Mitchell",
-    specialty: "Emergency Medicine",
-    category: "Medical Specialties",
-    bio: "EM attending at Royal London Hospital who trained in both US and UK systems. I understand the visa stress, burnout challenges, and what it's like to navigate international medical training. Real talk about what EM actually looks like.",
-    credentials: "Johns Hopkins MD | 8 years EM practice",
-    color: "bg-red-100",
-    accentColor: "bg-red-600",
-  },
-  {
-    id: "dr-li-chen",
-    name: "Dr. Li Chen (陈丽)",
-    specialty: "Interventional Cardiology",
-    category: "Medical Specialties",
-    bio: "Interventional Cardiologist at St Thomas' who moved from Shanghai to London. I get family pressure about specialty choice, navigating two healthcare systems, and what it's like proving yourself as an international medical graduate. Fluent in Mandarin and English.",
-    credentials: "Fudan MD | 12 years practice | Bilingual",
-    color: "bg-pink-100",
-    accentColor: "bg-pink-600",
-  },
-  {
-    id: "dr-james-okonkwo",
-    name: "Dr. James Okonkwo",
-    specialty: "Psychiatry & Global Mental Health",
-    category: "Medical Specialties",
-    bio: "Consultant Psychiatrist at South London and Maudsley. First-gen British-Nigerian doctor who chose the 'stigmatized specialty' to bridge cultural gaps in mental health care. I work with refugees and understand what it's like to straddle two worlds.",
-    credentials: "Edinburgh MBChB | Cultural psychiatry focus",
-    color: "bg-indigo-100",
-    accentColor: "bg-indigo-600",
-  },
-  {
-    id: "dr-priya-mehta",
-    name: "Dr. Priya Mehta",
-    specialty: "Internal Medicine & Medical Education",
-    category: "Medical Specialties",
-    bio: "Consultant Physician and Director of Medical Student Education at Guy's and St Thomas'. British-Indian doctor who nearly quit medicine twice due to imposter syndrome. Now I mentor students through exactly that - the safe person to ask 'dumb questions.'",
-    credentials: "King's College London MBBS | Education director",
-    color: "bg-emerald-100",
-    accentColor: "bg-emerald-600",
-  },
-];
+// const MOCK_PROVIDERS = [
+//   {
+//     id: "dr-sarah-mitchell",
+//     name: "Dr. Sarah Mitchell",
+//     specialty: "Emergency Medicine",
+//     category: "Medical Specialties",
+//     bio: "EM attending at Royal London Hospital who trained in both US and UK systems. I understand the visa stress, burnout challenges, and what it's like to navigate international medical training. Real talk about what EM actually looks like.",
+//     credentials: "Johns Hopkins MD | 8 years EM practice",
+//     color: "bg-red-100",
+//     accentColor: "bg-red-600",
+//   },
+//   {
+//     id: "dr-li-chen",
+//     name: "Dr. Li Chen (陈丽)",
+//     specialty: "Interventional Cardiology",
+//     category: "Medical Specialties",
+//     bio: "Interventional Cardiologist at St Thomas' who moved from Shanghai to London. I get family pressure about specialty choice, navigating two healthcare systems, and what it's like proving yourself as an international medical graduate. Fluent in Mandarin and English.",
+//     credentials: "Fudan MD | 12 years practice | Bilingual",
+//     color: "bg-pink-100",
+//     accentColor: "bg-pink-600",
+//   },
+//   {
+//     id: "dr-james-okonkwo",
+//     name: "Dr. James Okonkwo",
+//     specialty: "Psychiatry & Global Mental Health",
+//     category: "Medical Specialties",
+//     bio: "Consultant Psychiatrist at South London and Maudsley. First-gen British-Nigerian doctor who chose the 'stigmatized specialty' to bridge cultural gaps in mental health care. I work with refugees and understand what it's like to straddle two worlds.",
+//     credentials: "Edinburgh MBChB | Cultural psychiatry focus",
+//     color: "bg-indigo-100",
+//     accentColor: "bg-indigo-600",
+//   },
+//   {
+//     id: "dr-priya-mehta",
+//     name: "Dr. Priya Mehta",
+//     specialty: "Internal Medicine & Medical Education",
+//     category: "Medical Specialties",
+//     bio: "Consultant Physician and Director of Medical Student Education at Guy's and St Thomas'. British-Indian doctor who nearly quit medicine twice due to imposter syndrome. Now I mentor students through exactly that - the safe person to ask 'dumb questions.'",
+//     credentials: "King's College London MBBS | Education director",
+//     color: "bg-emerald-100",
+//     accentColor: "bg-emerald-600",
+//   },
+// ];
 
 function App() {
   const [viewMode, setViewMode] = useState("chat-only"); // 'chat-only', 'split-screen', 'provider-chat', 'swipe', 'team'
@@ -124,11 +124,11 @@ function App() {
     { sender: "pea", text: "hey! 👋 i'm pea." },
     {
       sender: "pea",
-      text: "i listen, but more importantly - i connect you with medical providers to shadow and learn from. real mentorship, real experience. because actions speak louder than words. 🫡",
+      text: "i connect Imperial MPH students and alumni for real networking and mentorship. skip the awkward LinkedIn cold messages - chat with people's AI extensions first, then connect for real when it makes sense. 🫡",
     },
     {
       sender: "pea",
-      text: "btw - i speak English, Mandarin (普通话), and Cantonese (粵語). whatever's most comfortable for you, i'm here. what specialty are you interested in learning about? 💙",
+      text: "btw - i can chat in any language you're comfortable with. we have students and alumni from all over the world 🌍 . are you a current student or an alum?",
     },
   ]);
   const [input, setInput] = useState("");
@@ -150,6 +150,14 @@ function App() {
   // Show scroll to bottom button when user scrolls up
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [isLoadingConversation, setIsLoadingConversation] = useState(true);
+  // Pronouns support (persisted in localStorage and backend profile)
+  const [pronouns, setPronouns] = useState(() => {
+    try {
+      return localStorage.getItem("pea_pronouns") || "";
+    } catch (e) {
+      return "";
+    }
+  });
 
   // Track which message indices should be visible (for staggered animation)
   const [visibleMessageCount, setVisibleMessageCount] = useState(3); // Start with initial greetings
@@ -235,6 +243,15 @@ function App() {
           }
 
           setProviderConversations(formattedProviderConvos);
+          // Restore pronouns if present on server profile
+          if (data.profile && data.profile.pronouns) {
+            setPronouns(data.profile.pronouns);
+            try {
+              localStorage.setItem("pea_pronouns", data.profile.pronouns);
+            } catch (e) {
+              // ignore
+            }
+          }
         }
       } catch (error) {
         console.error("Failed to load conversation:", error);
@@ -247,6 +264,27 @@ function App() {
 
     loadConversation();
   }, [conversationId]);
+
+  // Helper to save pronouns both locally and on the server
+  const handleSetPronouns = async (value) => {
+    setPronouns(value);
+    try {
+      localStorage.setItem("pea_pronouns", value);
+    } catch (e) {
+      // ignore
+    }
+
+    try {
+      const backend = API_URL || "http://localhost:3001";
+      await fetch(`${backend}/api/set-profile`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversationId, profile: { pronouns: value } }),
+      });
+    } catch (err) {
+      console.error("Failed to persist pronouns:", err);
+    }
+  };
 
   useEffect(() => {
     scrollToBottom();
@@ -635,7 +673,9 @@ function App() {
                 key={idx}
                 className={`mb-4 ${
                   msg.sender === "user" ? "flex justify-end" : ""
-                } ${idx < visibleMessageCount ? "opacity-100" : "opacity-0"} transition-opacity duration-300`}
+                } ${
+                  idx < visibleMessageCount ? "opacity-100" : "opacity-0"
+                } transition-opacity duration-300`}
               >
                 {msg.sender === "pea" && (
                   <div className="flex flex-col gap-2 items-start max-w-[85%]">
