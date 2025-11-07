@@ -14,12 +14,14 @@ An intelligent mentorship platform that connects medical students with AI-powere
 
 ### AI Specialists
 
-4 specialist mentors trained on real healthcare expertise:
+20+ specialist mentors trained on real healthcare expertise. Each specialist has:
+- Personalized bio and credentials
+- Specialty-focused expertise
+- Multi-language support
+- Context-aware conversation guidelines
+- Professional background and affiliations
 
-- **Dr. Sarah Mitchell** - Emergency Medicine (US/UK pathways, burnout management, international medical training)
-- **Dr. Li Chen (陈丽)** - Interventional Cardiology (bicultural medical experience, family expectations, China-UK healthcare systems)
-- **Dr. James Okonkwo** - Psychiatry & Global Mental Health (cultural psychiatry, refugee mental health, first-generation doctors)
-- **Dr. Priya Mehta** - Internal Medicine & Medical Education (imposter syndrome, generalist pathways, women in medicine)
+See `backend/specialists.js` for the complete registry of available specialists.
 
 ### UI/UX
 
@@ -35,20 +37,21 @@ An intelligent mentorship platform that connects medical students with AI-powere
 HH-AGENTIC/
 ├── frontend/          # React + Vite + Tailwind CSS
 │   ├── src/
-│   │   ├── App.jsx   # Main application component
+│   │   ├── App.jsx   # Main application component with pronouns support
 │   │   └── index.css
 │   └── package.json
 │
 ├── backend/           # Express.js API server
 │   ├── index.js      # Main server with all endpoints
-│   ├── peaSystemPrompt.js  # Pea's personality & instructions
-│   	├── providers.json      # Specialist registry
+│   ├── peaSystemPrompt.js       # Pea's personality & instructions
+│   ├── specialists.js           # Centralized specialist registry (20+)
+│   ├── scripts/
+│   │   └── clear-pea-redis.js  # Dev utility to reset Redis data
 │   ├── api/
 │   │   └── index.js  # Vercel serverless handler
 │   └── package.json
 │
-└── api/              # (Legacy - being phased out)
-    └── chat.mjs
+└── api/              # (Legacy - cleaned up)
 ```
 
 ## 🚀 Quick Start
@@ -111,22 +114,23 @@ Frontend runs on `http://localhost:5173`
 
 ### Main Endpoints
 
-- `POST /api/stream-chat` - Stream chat responses from Pea
-- `POST /api/provider-chat` - Chat with specific AI specialist
-- `POST /api/load-conversation` - Load conversation history on page refresh
-- `POST /api/dismiss-providers` - Permanently dismiss specialist recommendations
-- `GET /api/providers` - Get all available specialists
+- `POST /api/stream-chat` - Stream chat responses from Pea with dynamic specialist recommendations
+- `POST /api/provider-chat` - Chat with specific AI specialist (with context injection from main conversation)
+- `POST /api/set-profile` - Update user profile (pronouns, recommendations, etc.)
+- `GET /api/health` - Health check endpoint (returns provider count)
 
 ### How Specialist Recommendations Work
 
-1. User chats with Pea about their interests and background
+1. User chats with Pea about their interests, background, and challenges
 2. Backend analyzes conversation for:
    - User expressing interest in mentorship
-   - Pea mentioning the mentorship team
-   - Exchange count (4+ messages with interest, or 8+ messages total)
-3. When triggered, Claude analyzes conversation and recommends 2-3 relevant specialists
-4. Recommendations saved to Redis and persist across sessions
-5. Users can dismiss or view team anytime
+   - Pea mentioning the mentorship team/support team/care team
+   - Exchange count thresholds (varies by urgency)
+   - High-gravity stressors (multiple mentions of pain, anxiety, burnout, etc.)
+3. When triggered, Claude analyzes full conversation against live `SPECIALIST_REGISTRY`
+4. Claude recommends 1-2 most relevant specialists based on expertise match
+5. Recommendations saved to Redis and persist across sessions
+6. Specialists receive context from main conversation (no need for user to repeat themselves)
 
 ## 🗄️ Data Persistence
 
@@ -194,7 +198,20 @@ When you first message a specialist, the backend:
 - Redis initialization is lazy (connects on first use in serverless)
 - CORS configured to accept requests from frontend URL
 
-## 🛠️ Tech Stack
+## � Development Tools
+
+### Clearing Redis Data
+
+To reset conversation and profile data during testing:
+
+```bash
+cd backend
+node scripts/clear-pea-redis.js
+```
+
+This safely deletes all `conversation:*` and `profile:*` keys from Redis.
+
+**Note:** You can also test in an incognito window to avoid cached localStorage data.
 
 **Frontend:**
 
@@ -287,10 +304,33 @@ All UTM parameters appear as user properties in PostHog, allowing you to:
 - Compare engagement across different student groups
 - Create custom dashboards for each campaign
 
-## 📝 Recent Updates
+## � Recent Updates
 
-### November 2025
+### November 2025 - Registry Refactoring & UX Improvements
 
+**Infrastructure:**
+- ✅ Centralized specialist registry in `backend/specialists.js` (20+ healthcare specialists)
+- ✅ Dynamic specialist recommendations using live registry (no hardcoded IDs)
+- ✅ Added `backend/scripts/clear-pea-redis.js` utility for development data resets
+- ✅ Cleaned up legacy API files (`api/chat.mjs`, `api/providers.mjs`)
+
+**Features:**
+- ✅ Added pronouns support to user profiles (backend endpoint + frontend state + localStorage)
+- ✅ Improved specialist conversation quality with injected guidelines (2-4 sentence max, one question at a time, conversational tone)
+- ✅ Expanded specialist recommendation triggers with mentorship/team language detection
+
+**Recommendation Logic:**
+- ✅ Trigger on Pea mentioning care/support/mentorship team + user interest
+- ✅ Trigger on high-gravity stressors (3+ mentions of burnout, anxiety, pain, etc.)
+- ✅ Fallback trigger after 5+ exchanges if no previous matches
+- ✅ Claude analyzes against actual registry (only validates existing specialist IDs)
+
+**System Prompt Updates:**
+- ✅ Added "RECOMMENDED LANGUAGE FOR INTRODUCTIONS" to guide Pea's mentor connection phrasing
+- ✅ Injected "CRITICAL CONVERSATION GUIDELINES" into all specialist AI prompts
+- ✅ Enhanced context passing so specialists understand conversation history
+
+**Previous Updates:**
 - ✅ Added UTM parameter tracking for cohort analytics
 - ✅ Implemented staggered message reveals for better UX
 - ✅ Fixed specialist matching logic (no more false recommendations)
