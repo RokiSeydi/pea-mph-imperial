@@ -150,7 +150,6 @@ function App() {
   // Show scroll to bottom button when user scrolls up
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [isLoadingConversation, setIsLoadingConversation] = useState(true);
-  const [hasAutoChecked, setHasAutoChecked] = useState(false);
   // Pronouns support (persisted in localStorage and backend profile)
   const [pronouns, setPronouns] = useState(() => {
     try {
@@ -681,14 +680,8 @@ function App() {
 
       if (data.recommendedProviders && data.recommendedProviders.length > 0) {
         setRecommendedProviders(data.recommendedProviders);
-        // Do NOT auto-open split-screen here; enable the button and notify the user
-        setMessages((prev) => [
-          ...prev,
-          {
-            sender: "pea",
-            text: "I've found some Imperial recommendations — the 'Your Imperial recommendations' button at the top is enabled. Tap it to view them.",
-          },
-        ]);
+        setViewMode("split-screen");
+        if (window.innerWidth < 768) setMobileShowProviders(true);
       } else {
         // Inform user no recommendations found
         setMessages((prev) => [
@@ -709,31 +702,6 @@ function App() {
       setIsLoading(false);
     }
   };
-
-  // Auto-trigger a single recommendation check when Pea mentions providers in the conversation
-  useEffect(() => {
-    if (hasAutoChecked) return;
-    const last = messages[messages.length - 1];
-    if (!last || last.sender !== "pea") return;
-
-    const text = (last.text || "").toLowerCase();
-    const careKeywords = [
-      "care team",
-      "support team",
-      "specialists",
-      "introduce you",
-      "meet",
-      "recommend",
-      "care",
-      "providers",
-    ];
-
-    const shouldTrigger = careKeywords.some((k) => text.includes(k));
-    if (shouldTrigger && recommendedProviders.length === 0) {
-      setHasAutoChecked(true);
-      handleFetchRecommendations();
-    }
-  }, [messages, recommendedProviders, hasAutoChecked]);
 
   // SPLIT-SCREEN VIEW (NEW)
   if (viewMode === "split-screen") {
@@ -1158,8 +1126,16 @@ function App() {
               )}
             </button>
 
-            {/* No secondary action - button is enabled/disabled based on recommendations */}
-
+            {/* Secondary action: allow explicit check when there are no stored recommendations */}
+            {recommendedProviders.length === 0 && (
+              <button
+                onClick={handleFetchRecommendations}
+                disabled={isLoading}
+                className="text-xs text-gray-600 hover:underline flex items-center gap-2"
+              >
+                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Check now"}
+              </button>
+            )}
             {activeTeam.length > 0 && (
               <button
                 onClick={() => setViewMode("team")}
