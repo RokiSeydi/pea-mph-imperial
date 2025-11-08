@@ -1080,29 +1080,38 @@ function App() {
             <Leaf className="w-5 h-5 text-white" />
           </div>
           <h1 className="font-semibold text-base">Pea</h1>
-          <div className="ml-auto flex gap-2">
-            {/* Show "View Your Team" button if providers are recommended */}
-            {recommendedProviders.length > 0 ? (
-              <button
-                onClick={() => setViewMode("split-screen")}
-                className="text-xs bg-green-700 text-white px-3 py-2 rounded-lg font-bold shadow-lg hover:bg-green-800 transition whitespace-nowrap"
-              >
-                View Your Team 👉
-              </button>
-            ) : (
-              // When there are no stored recommendations, show a button to fetch them on-demand
+          <div className="ml-auto flex items-center gap-3">
+            {/* Primary recommendations button: shows state (disabled when none, green when present) */}
+            <button
+              onClick={() => {
+                if (recommendedProviders.length > 0) setViewMode("split-screen");
+              }}
+              disabled={recommendedProviders.length === 0}
+              className={`text-xs px-3 py-2 rounded-lg font-bold whitespace-nowrap transition ${
+                recommendedProviders.length > 0
+                  ? "bg-green-700 text-white shadow-lg hover:bg-green-800"
+                  : "bg-gray-200 text-gray-500 cursor-not-allowed"
+              }`}
+            >
+              Your Imperial recommendations
+              {recommendedProviders.length > 0 && (
+                <span className="ml-2 inline-block text-[12px] bg-white/10 px-2 py-0.5 rounded-full">
+                  {recommendedProviders.length}
+                </span>
+              )}
+            </button>
+
+            {/* Secondary action: allow explicit check when there are no stored recommendations */}
+            {recommendedProviders.length === 0 && (
               <button
                 onClick={handleFetchRecommendations}
                 disabled={isLoading}
-                className="text-xs bg-green-700 text-white px-3 py-2 rounded-lg font-bold shadow-lg hover:bg-green-800 transition whitespace-nowrap flex items-center gap-2"
+                className="text-xs text-gray-600 hover:underline flex items-center gap-2"
               >
-                {isLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  "Your Imperial recommendations"
-                )}
+                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Check now"}
               </button>
             )}
+
             {activeTeam.length > 0 && (
               <button
                 onClick={() => setViewMode("team")}
