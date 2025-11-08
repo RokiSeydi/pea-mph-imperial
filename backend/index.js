@@ -144,6 +144,16 @@ async function saveUserProfile(conversationId, profile) {
   }
 }
 
+// Helper to call Anthropic with a timeout to avoid long blocking in serverless
+async function callAnthropicWithTimeout(params, timeoutMs = 10000) {
+  return Promise.race([
+    anthropic.messages.create(params),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("LLM timeout")), timeoutMs)
+    ),
+  ]);
+}
+
 // Middleware
 app.use(
   cors({
@@ -204,6 +214,130 @@ app.post("/api/load-conversation", async (req, res) => {
   } catch (error) {
     console.error("Error loading conversation:", error);
     res.status(500).json({ error: "Failed to load conversation" });
+  }
+});
+
+// On-demand provider recommendation endpoint
+app.post("/api/recommend-providers", async (req, res) => {
+  const { conversationId } = req.body || {};
+
+  if (!conversationId) {
+    return res.status(400).json({ error: "Missing conversationId" });
+  }
+
+  try {
+    // Load conversation and profile
+    const conversation = await getConversation(conversationId);
+    const profile = (await getUserProfile(conversationId)) || {};
+
+    console.log("🔍 Running on-demand recommendation for:", conversationId);
+
+    // Build conversation summary
+    const conversationSummary = conversation
+      .map((msg) => `${msg.role}: ${msg.content}`)
+      .join("\n");
+
+    const registryIds = Object.keys(SPECIALIST_REGISTRY);
+    const registryFormatted = registryIds
+      .map((id) => {
+        const specialist = SPECIALIST_REGISTRY[id];
+        return `- ${id}: ${specialist.specialty} | ${(
+          specialist.bio || ""
+        ).substring(0, 60)}...`;
+      })
+      .join("\n");
+
+    const promptSystem = `You are an expert at matching MPH students with experienced healthcare mentors and specialists.
+
+RULE: Recommend 1-2 specialists if there is a GOOD match between the student's interests and the specialist's expertise.
+If NO good match exists, respond with: none
+
+Only use specialist IDs that are provided below. NEVER invent IDs.`;
+
+    const userPrompt = `Based on this conversation, who should this person talk to?
+
+Conversation:
+${conversationSummary}
+
+Available specialists:
+${registryFormatted}
+
+RESPOND WITH ONLY: comma-separated specialist ID(s) or "none" if no good match.`;
+
+    // Call Anthropic with timeout
+    let recommendationResponse;
+    try {
+      recommendationResponse = await callAnthropicWithTimeout(
+        {
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 150,
+          system: promptSystem,
+          messages: [{ role: "user", content: userPrompt }],
+        },
+        12000 // 12s timeout for recommendations
+      );
+    } catch (err) {
+      console.error("Recommendation LLM call failed or timed out:", err?.message || err);
+      return res.status(500).json({ error: "Recommendation request failed or timed out" });
+    }
+
+    // Parse recommendation result robustly
+    console.log("🧾 Raw recommendation response:", JSON.stringify(recommendationResponse));
+
+    let recText = "";
+    try {
+      if (Array.isArray(recommendationResponse?.content) && recommendationResponse.content[0]) {
+        recText = (recommendationResponse.content[0].text || "").toString();
+      } else if (typeof recommendationResponse?.content === "string") {
+        recText = recommendationResponse.content;
+      } else if (Array.isArray(recommendationResponse?.content)) {
+        recText = recommendationResponse.content.map((c) => c.text || "").join(" ");
+      } else {
+        recText = String(recommendationResponse?.content || "");
+      }
+    } catch (e) {
+      console.warn("Could not parse recommendationResponse content:", e);
+      recText = "";
+    }
+
+    recText = recText.trim().toLowerCase();
+
+    if (!recText || recText === "none") {
+      console.log("ℹ️ Recommendation returned no providers (none or empty)");
+      // Persist that we didn't find providers
+      profile.recommendedProviders = null;
+      await saveUserProfile(conversationId, profile);
+      return res.json({ recommendedProviders: [] });
+    }
+
+    const recommendedIds = recText
+      .split(",")
+      .map((id) => id.trim())
+      .filter((id) => id.length > 0 && id !== "none");
+
+    console.log("💡 Recommended provider IDs (on-demand):", recommendedIds);
+
+    const validIds = recommendedIds.filter((id) => {
+      const exists = !!SPECIALIST_REGISTRY[id];
+      if (!exists) console.warn(`⚠️ Provider ID not found in registry: ${id}`);
+      return exists;
+    });
+
+    const recommendedProviders = validIds.map((id) => SPECIALIST_REGISTRY[id]);
+
+    if (recommendedProviders.length > 0) {
+      profile.recommendedProviders = recommendedProviders;
+      await saveUserProfile(conversationId, profile);
+      console.log("✅ On-demand providers saved:", recommendedProviders.map((p) => p.id));
+      return res.json({ recommendedProviders });
+    } else {
+      profile.recommendedProviders = null;
+      await saveUserProfile(conversationId, profile);
+      return res.json({ recommendedProviders: [] });
+    }
+  } catch (error) {
+    console.error("On-demand recommendation error:", error);
+    return res.status(500).json({ error: "Failed to run recommendations" });
   }
 });
 
