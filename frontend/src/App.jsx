@@ -327,6 +327,31 @@ function App() {
     }
   }, [recommendedProviders]);
 
+  // Auto-trigger a single recommendation check when Pea mentions providers in the conversation
+  useEffect(() => {
+    if (hasAutoChecked) return;
+    const last = messages[messages.length - 1];
+    if (!last || last.sender !== "pea") return;
+
+    const text = (last.text || "").toLowerCase();
+    const careKeywords = [
+      "care team",
+      "support team",
+      "specialists",
+      "introduce you",
+      "meet",
+      "recommend",
+      "care",
+      "providers",
+    ];
+
+    const shouldTrigger = careKeywords.some((k) => text.includes(k));
+    if (shouldTrigger && recommendedProviders.length === 0) {
+      setHasAutoChecked(true);
+      handleFetchRecommendations();
+    }
+  }, [messages, recommendedProviders, hasAutoChecked]);
+
   // conversation loading state
   if (isLoadingConversation) {
     return (
