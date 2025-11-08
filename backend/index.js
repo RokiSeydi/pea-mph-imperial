@@ -162,6 +162,51 @@ app.get("/api/health", (req, res) => {
   });
 });
 
+// Load conversation history (for page refresh)
+app.post("/api/load-conversation", async (req, res) => {
+  try {
+    const { conversationId } = req.body;
+
+    // Get main Pea conversation
+    const messages = await getConversation(conversationId);
+
+    // Get user profile (for recommended providers)
+    const profile = await getUserProfile(conversationId);
+
+    console.log("🔍 Profile from Redis:", {
+      conversationId,
+      hasProfile: !!profile,
+      recommendedProviders: profile.recommendedProviders,
+      providerCount: profile.recommendedProviders?.length || 0,
+      exchangeCount: profile.exchangeCount,
+    });
+
+    // Get all provider conversations
+    const providerConversations = {};
+    if (
+      profile.recommendedProviders &&
+      profile.recommendedProviders.length > 0
+    ) {
+      for (const provider of profile.recommendedProviders) {
+        const providerConvKey = `${conversationId}-${provider.id}`;
+        const providerMessages = await getConversation(providerConvKey);
+        if (providerMessages.length > 0) {
+          providerConversations[provider.id] = providerMessages;
+        }
+      }
+    }
+
+    res.json({
+      messages: messages || [],
+      recommendedProviders: profile.recommendedProviders || [],
+      providerConversations: providerConversations,
+    });
+  } catch (error) {
+    console.error("Error loading conversation:", error);
+    res.status(500).json({ error: "Failed to load conversation" });
+  }
+});
+
 // Streaming chat endpoint with specialist recommendations
 app.post("/api/stream-chat", async (req, res) => {
   const { conversationId, message } = req.body;
@@ -222,68 +267,23 @@ app.post("/api/stream-chat", async (req, res) => {
       conversation.push({ role: "assistant", content: assistantText });
       await saveConversation(conversationId, conversation);
 
-      // (Optional) run specialist recommendation logic here synchronously
+      // SERVERLESS-SAFE BEHAVIOR
+      // On Vercel we avoid performing another potentially long-running
+      // LLM call for recommendations. Instead, return the assistant text
+      // quickly and only include any already-stored recommendations from the
+      // user's profile. If none exist, return an empty array and defer
+      // recommendation work to a background job or later request.
+
       let shouldShowProviders = false;
       let recommendedProviders = profile.recommendedProviders || [];
 
-      if (profile.exchangeCount >= 6 && !profile.recommendedProviders) {
-        try {
-          console.log(
-            "🔍 ATTEMPTING to analyze conversation for provider recommendations..."
-          );
-          console.log("📊 Conversation length:", conversation.length);
-          const recommendationResponse = await anthropic.messages.create({
-            model: "claude-sonnet-4-20250514",
-            max_tokens: 200,
-            system: `You are an expert at matching students with healthcare providers. Respond ONLY with provider IDs, comma-separated.`,
-            messages: [
-              {
-                role: "user",
-                content: `Based on this conversation, recommend 2-3 providers:\n\n
-           ${conversation
-             .filter((m) => m.role === "user") // Only user messages
-             .slice(-5) // Only last 5 user messages
-             .map((msg) => msg.content)
-             .join("\n")}
-
-Available providers:
-- dr-emma-therapist: Anxiety, stress, academic pressure
-- tom-osteopath: Back pain, posture issues
-- maya-yoga: Chronic fatigue, gentle movement
-- lisa-nutritionist: Budget eating, energy
-- sarah-acupuncture: Chronic pain, migraines
-- sarah-disability-navigator: Disability accommodations
-
-Provider IDs only, comma-separated:`,
-              },
-            ],
-          });
-
-          const recommendedIds = recommendationResponse.content[0].text
-            .trim()
-            .toLowerCase()
-            .split(",")
-            .map((id) => id.trim());
-
-          recommendedProviders = recommendedIds
-            .map((id) => SPECIALIST_REGISTRY[id])
-            .filter(Boolean);
-          if (recommendedProviders.length) {
-            profile.recommendedProviders = recommendedProviders;
-            console.log("💾 Saving providers to profile (serverless):", {
-              conversationId,
-              providerIds: recommendedProviders.map((p) => p.id),
-              providerNames: recommendedProviders.map((p) => p.name),
-            });
-            await saveUserProfile(conversationId, profile);
-            shouldShowProviders = true;
-          }
-        } catch (err) {
-          console.error(
-            "Recommendation (serverless) failed:",
-            err?.message || err
-          );
-        }
+      if (recommendedProviders && recommendedProviders.length > 0) {
+        shouldShowProviders = true;
+      } else {
+        // No stored recommendations — log and skip synchronous recommendation.
+        console.log(
+          "ℹ️ Skipping synchronous recommendation in serverless mode. To get recommendations, run recommendation logic in a background job or on-demand endpoint."
+        );
       }
 
       return res.json({
@@ -497,12 +497,36 @@ Example valid responses:
           ],
         });
 
-        const recommendedIds = recommendationResponse.content[0].text
-          .trim()
-          .toLowerCase()
+        // Log the full raw recommendation response for debugging
+        console.log("🧾 Raw recommendation response:", JSON.stringify(recommendationResponse));
+
+        // Safely extract the text from potential response shapes
+        let recText = "";
+        try {
+          if (Array.isArray(recommendationResponse?.content) && recommendationResponse.content[0]) {
+            recText = (recommendationResponse.content[0].text || "").toString();
+          } else if (typeof recommendationResponse?.content === "string") {
+            recText = recommendationResponse.content;
+          } else if (Array.isArray(recommendationResponse?.content)) {
+            recText = recommendationResponse.content.map((c) => c.text || "").join(" ");
+          } else {
+            recText = String(recommendationResponse?.content || "");
+          }
+        } catch (e) {
+          console.warn("Could not parse recommendationResponse content:", e);
+          recText = "";
+        }
+
+        recText = recText.trim().toLowerCase();
+
+        if (!recText || recText === "none") {
+          console.log("ℹ️ Recommendation returned no providers (none or empty)");
+        }
+
+        const recommendedIds = recText
           .split(",")
           .map((id) => id.trim())
-          .filter((id) => id.length > 0); // Remove empty strings
+          .filter((id) => id.length > 0 && id !== "none");
 
         console.log("💡 Recommended provider IDs:", recommendedIds);
 
