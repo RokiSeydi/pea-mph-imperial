@@ -629,6 +629,55 @@ function App() {
     }
   };
 
+  // On-demand recommendations trigger (called by new UI button)
+  const handleFetchRecommendations = async () => {
+    if (isLoading) return;
+    setIsLoading(true);
+
+    try {
+      const resp = await fetch(`${API_URL}/api/recommend-providers`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversationId }),
+      });
+
+      if (!resp.ok) {
+        const err = await resp.text();
+        console.error("Recommendation fetch failed:", err);
+        setMessages((prev) => [
+          ...prev,
+          { sender: "pea", text: "Sorry — couldn't fetch recommendations right now." },
+        ]);
+        return;
+      }
+
+      const data = await resp.json();
+
+      if (data.recommendedProviders && data.recommendedProviders.length > 0) {
+        setRecommendedProviders(data.recommendedProviders);
+        setViewMode("split-screen");
+        if (window.innerWidth < 768) setMobileShowProviders(true);
+      } else {
+        // Inform user no recommendations found
+        setMessages((prev) => [
+          ...prev,
+          {
+            sender: "pea",
+            text: "I couldn't find a clear match right now. You can try rephrasing or ask me to look again.",
+          },
+        ]);
+      }
+    } catch (err) {
+      console.error("Error fetching recommendations:", err);
+      setMessages((prev) => [
+        ...prev,
+        { sender: "pea", text: "Something went wrong fetching recommendations." },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // SPLIT-SCREEN VIEW (NEW)
   if (viewMode === "split-screen") {
     return (
@@ -749,7 +798,7 @@ function App() {
               <button
                 onClick={handleSend}
                 disabled={isLoading || !input.trim()}
-                className="bg-green-600 text-white p-2.5 rounded-full hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                className="bg-green-600 text-white p-2.5 rounded-full hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
               >
                 {isLoading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
@@ -1033,12 +1082,25 @@ function App() {
           <h1 className="font-semibold text-base">Pea</h1>
           <div className="ml-auto flex gap-2">
             {/* Show "View Your Team" button if providers are recommended */}
-            {recommendedProviders.length > 0 && (
+            {recommendedProviders.length > 0 ? (
               <button
                 onClick={() => setViewMode("split-screen")}
                 className="text-xs bg-green-700 text-white px-3 py-2 rounded-lg font-bold shadow-lg hover:bg-green-800 transition whitespace-nowrap"
               >
                 View Your Team 👉
+              </button>
+            ) : (
+              // When there are no stored recommendations, show a button to fetch them on-demand
+              <button
+                onClick={handleFetchRecommendations}
+                disabled={isLoading}
+                className="text-xs bg-green-700 text-white px-3 py-2 rounded-lg font-bold shadow-lg hover:bg-green-800 transition whitespace-nowrap flex items-center gap-2"
+              >
+                {isLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  "Your Imperial recommendations"
+                )}
               </button>
             )}
             {activeTeam.length > 0 && (
